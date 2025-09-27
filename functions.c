@@ -1,18 +1,19 @@
 #include "conversions.c"
 #include <math.h>
 
-void printTable(float speed, float radius, float angle_deg, float lat_gforces) {
+void printTable(float speed, float radius, float angle_deg, float lat_gforce, float ver_gforce) {
 
     printf("\n");
-    printf("1 - Speed:        %.2fkm/h\n", speed);
-    printf("2 - Radius:       %.2fm\n", radius);
-    printf("3 - Track Angle:  %.2fdeg\n", angle_deg);
-    printf("Lateral G-Forces: %.2fg\n",lat_gforces);
+    printf("1 - Speed:                   %.2fkm/h\n", speed);
+    printf("2 - Radius of Curve:         %.2fm\n", radius);
+    printf("3 - Track Horizontal Angle:  %.3fdeg\n", angle_deg);
+    printf("Lateral G-Force:             %.3fg\n",lat_gforce);
+    printf("Vertical G-force:            %.3fg\n",ver_gforce);
     printf("\n");
 
 }
 
-void printNotes(float speed, float radius, float angle_deg, float lat_gforces, float angle_calculated_deg) {
+void printNotes(float speed, float radius, float angle_deg, float lat_gforce, float angle_calculated_deg, float ver_gforce) {
     short int notesnum = 0;
 
     printf("\n");
@@ -42,8 +43,11 @@ void printNotes(float speed, float radius, float angle_deg, float lat_gforces, f
     }
 
     //Gforces errors
-    if (lat_gforces>15) {
-        printf("Warning: Lateral g-forces may be too high for comfort.");notesnum++;
+    if (lat_gforce>0.15) {
+        printf("Warning: Lateral g-forces may be too high for comfort and real world use.\n");notesnum++;
+    }
+    if (ver_gforce>1.15) {
+        printf("Warning: Vertical g-forces may be too high for comfort and real world use.\n");notesnum++;
     }
 
     //if there are no notes:
@@ -96,7 +100,7 @@ void mainSelection(float*speed,float*radius,float*angle_deg) {
     }
 }
 
-void smartCalculator(float*speed,float*radius,float*angle_deg, float lat_gforces) {
+void smartCalculator(float*speed,float*radius,float*angle_deg, float lat_gforces, float ver_gforce) {
 
     float angle_calculated=0.0, angle_calculated_deg=0.0, radius_calculated=0.0, speed_calculated_ms=0.0, speed_calculated=0.0;
     float speedms = kmh_to_ms(*speed);
@@ -132,16 +136,18 @@ void smartCalculator(float*speed,float*radius,float*angle_deg, float lat_gforces
     printf("Optimal speed assuming %.2fm radius and %.2fdeg angle: %.2fkm/h\n",*radius,*angle_deg,speed_calculated);
     printf("Optimal radius assuming %.2fkm/h speed and %.2fdeg angle: %.2fm\n",*speed,*angle_deg,radius_calculated);
     printf("Optimal track angle assuming %.2fkm/h speed and %.2fm radius: %.2fdeg\n",*speed,*radius,angle_calculated_deg);
-    printNotes(*speed,*radius,*angle_deg,lat_gforces,angle_calculated_deg);
+    printNotes(*speed,*radius,*angle_deg,lat_gforces,angle_calculated_deg,ver_gforce);
 
 }
 
-void gcalc(float*lat_gforces,float speed,float radius, float angle_deg) {
+void gcalc(float*lat_gforce,float*ver_gforce,float speed,float radius, float angle_deg) {
 
     float lat_acell = ((kmh_to_ms(speed))*(kmh_to_ms(speed)))/radius;
     float gforce_lat_noangle = ((kmh_to_ms(speed))*(kmh_to_ms(speed)))/(radius*EGravity);
     float gforce_lat_withangle = (gforce_lat_noangle-tan(deg_to_rad(angle_deg)))/cos(deg_to_rad(angle_deg));
+    float vertical_gforces_withangleconsideration = cos(deg_to_rad(angle_deg))+(gforce_lat_noangle*sin(deg_to_rad(angle_deg)));
 
-    *lat_gforces = gforce_lat_withangle;
+    *lat_gforce = gforce_lat_withangle;
+    *ver_gforce = vertical_gforces_withangleconsideration;
 
 }

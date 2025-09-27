@@ -3,7 +3,7 @@
 #include "functions.c"
 
 int main() {
-    float speed=0.0, radius=0.0, angle_deg=0.0, lat_gforce=0.0;
+    float speed=0.0, radius=0.0, angle_deg=0.0, lat_gforce=0.0, ver_gforce=0.0;
     short int main_loop = 1;
     #ifdef _WIN32
         system("cls");   // Windows
@@ -16,9 +16,9 @@ int main() {
 
     while (main_loop == 1) {
 
-        gcalc(&lat_gforce,speed,radius, angle_deg);
-        smartCalculator(&speed,&radius,&angle_deg,lat_gforce);
-        printTable(speed, radius, angle_deg,lat_gforce);
+        gcalc(&lat_gforce,&ver_gforce,speed,radius,angle_deg);
+        smartCalculator(&speed,&radius,&angle_deg,lat_gforce,ver_gforce);
+        printTable(speed, radius, angle_deg,lat_gforce,ver_gforce);
         mainSelection(&speed,&radius,&angle_deg);
 
         #ifdef _WIN32
