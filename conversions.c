@@ -1,4 +1,5 @@
 #define PI 3.14159265358979323846
+#define EGravity 9.80665
 
 float deg_to_rad (float angle_deg) {
     float angle;

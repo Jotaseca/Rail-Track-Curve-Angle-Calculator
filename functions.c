@@ -1,19 +1,18 @@
 #include "conversions.c"
 #include <math.h>
 
-void printTable(float speed, float radius, float angle_deg, short int smartCalculation) {
+void printTable(float speed, float radius, float angle_deg, float lat_gforces) {
 
-    printf("Smart calculation is ");
-    if(smartCalculation) {printf("on, (set a parameter to 0 for calculation)\n ");} else {printf("off.\n");}
     printf("\n");
     printf("1 - Speed:        %.2fkm/h\n", speed);
     printf("2 - Radius:       %.2fm\n", radius);
     printf("3 - Track Angle:  %.2fdeg\n", angle_deg);
+    printf("Lateral G-Forces: %.2fg\n",lat_gforces);
     printf("\n");
 
 }
 
-void printNotes(float speed, float radius, float angle_deg, float angle_calculated_deg) {
+void printNotes(float speed, float radius, float angle_deg, float lat_gforces, float angle_calculated_deg) {
     short int notesnum = 0;
 
     printf("\n");
@@ -41,6 +40,12 @@ void printNotes(float speed, float radius, float angle_deg, float angle_calculat
         printf("Warning: The optimal calculated angle for the given radius and speed is too high for real world use, at %f.\n", angle_calculated_deg);notesnum++;
         printf("Suggestion: Please consider changing the radius or speed.\n");notesnum++;
     }
+
+    //Gforces errors
+    if (lat_gforces>15) {
+        printf("Warning: Lateral g-forces may be too high for comfort.");notesnum++;
+    }
+
     //if there are no notes:
     if (notesnum==0) {
         printf("None.\n");
@@ -72,21 +77,17 @@ void printSelection(float*speed,float*radius,float*angle_deg) {
     }
 }
 
-void mainSelection(float*speed,float*radius,float*angle_deg,short int*smartCalculation) {
+void mainSelection(float*speed,float*radius,float*angle_deg) {
     int choice = 0;
     printf("\n");
     printf("Options:\n");
-    printf("1 - Toggle Smart Calculator\n");
-    printf("2 - Change Parameters\n");
+    printf("1 - Change Parameters\n");
     printf("\n");
     printf("Insert Selection: ");
     scanf("%d", &choice);
 
     switch(choice) {
         case 1:
-            if (*smartCalculation == 0) {*smartCalculation=1;}else{*smartCalculation=0;}
-            break;
-        case 2:
             printSelection(speed,radius,angle_deg);
             break;
         default:
@@ -95,33 +96,35 @@ void mainSelection(float*speed,float*radius,float*angle_deg,short int*smartCalcu
     }
 }
 
-void smartCalculator(float*speed,float*radius,float*angle_deg, short int smartCalculation) {
+void smartCalculator(float*speed,float*radius,float*angle_deg, float lat_gforces) {
 
     float angle_calculated=0.0, angle_calculated_deg=0.0, radius_calculated=0.0, speed_calculated_ms=0.0, speed_calculated=0.0;
     float speedms = kmh_to_ms(*speed);
     float angle_rad = deg_to_rad(*angle_deg);
 
+    /*
     if (smartCalculation) {
         if ((*speed!=0) && (*radius!=0) && (*angle_deg==0)) {
             // Speed and radius
-            float angle = fabs(atan((speedms * speedms) / (9.806 * *radius)));
+            float angle = fabs(atan((speedms * speedms) / (EGravity * *radius)));
             *angle_deg = rad_to_deg(angle);
             printf("Automatically calculated angle.\n");
         } else if ((*radius!=0) && (*angle_deg!=0) && (*speed==0)) {
             // Radius and angle
-            *speed = sqrt(fabs(9.806 * *radius * tan(angle_rad)));
+            *speed = sqrt(fabs(EGravity * *radius * tan(angle_rad)));
             printf("Automatically calculated speed.\n");
         } else if ((*speed!=0)&&(*angle_deg!=0)&&(*radius==0)) {
             // Speed and angle
-            *radius = fabs((speedms * speedms) / (9.806 * tan(angle_rad)));
+            *radius = fabs((speedms * speedms) / (EGravity * tan(angle_rad)));
             printf("Automatically calculated radius.\n");
         }
     }
+    */
 
-    angle_calculated = fabs(atan((speedms * speedms) / (9.806 * *radius)));
+    angle_calculated = fabs(atan((speedms * speedms) / (EGravity * *radius)));
     angle_calculated_deg = angle_calculated * 180 / PI;
-    radius_calculated = fabs((speedms * speedms) / (9.806 * tan(angle_rad)));
-    speed_calculated_ms = sqrt(fabs(9.806 * *radius * tan(angle_rad)));
+    radius_calculated = fabs((speedms * speedms) / (EGravity * tan(angle_rad)));
+    speed_calculated_ms = sqrt(fabs(EGravity * *radius * tan(angle_rad)));
     speed_calculated = ms_to_kmh(speed_calculated_ms);
 
     printf("\n");
@@ -129,7 +132,16 @@ void smartCalculator(float*speed,float*radius,float*angle_deg, short int smartCa
     printf("Optimal speed assuming %.2fm radius and %.2fdeg angle: %.2fkm/h\n",*radius,*angle_deg,speed_calculated);
     printf("Optimal radius assuming %.2fkm/h speed and %.2fdeg angle: %.2fm\n",*speed,*angle_deg,radius_calculated);
     printf("Optimal track angle assuming %.2fkm/h speed and %.2fm radius: %.2fdeg\n",*speed,*radius,angle_calculated_deg);
-    printNotes(*speed,*radius,*angle_deg,angle_calculated_deg);
+    printNotes(*speed,*radius,*angle_deg,lat_gforces,angle_calculated_deg);
 
 }
 
+void gcalc(float*lat_gforces,float speed,float radius, float angle_deg) {
+
+    float lat_acell = ((kmh_to_ms(speed))*(kmh_to_ms(speed)))/radius;
+    float gforce_lat_noangle = ((kmh_to_ms(speed))*(kmh_to_ms(speed)))/(radius*EGravity);
+    float gforce_lat_withangle = (gforce_lat_noangle-tan(deg_to_rad(angle_deg)))/cos(deg_to_rad(angle_deg));
+
+    *lat_gforces = gforce_lat_withangle;
+
+}
